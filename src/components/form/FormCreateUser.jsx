@@ -1,14 +1,25 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Button, Container, Form } from 'react-bootstrap';
-import { postUser, putUser } from '../../api/user';
+import { useDispatch, useSelector } from 'react-redux';
+import { postUserApi, putUserApi } from '../../api/user';
+import {
+  getDetailUser,
+  postUser,
+  putUser,
+  selectUserDetail,
+  selectUserDetailStatus,
+} from '../../redux/feature/usersSlice';
 
-const FormCreateUser = ({ onSuccess, editId }) => {
+const FormCreateUser = ({ editId }) => {
+  const userDetail = useSelector(selectUserDetail);
+  const userDetailStatus = useSelector(selectUserDetailStatus);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [avatar, setAvatar] = useState('');
   const [email, setEmail] = useState('');
   const [errors, setError] = useState({});
+  const dispatch = useDispatch();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,15 +33,9 @@ const FormCreateUser = ({ onSuccess, editId }) => {
           email,
         };
         if (editId) {
-          const res = await putUser(editId, payload);
-          if (res.status === 200) {
-            onSuccess();
-          }
+          dispatch(putUser({ editId, data: payload }));
         } else {
-          const res = await postUser(payload);
-          if (res.status === 200) {
-            onSuccess();
-          }
+          dispatch(postUser(payload));
         }
       } catch (e) {
         console.error(e);
@@ -52,20 +57,24 @@ const FormCreateUser = ({ onSuccess, editId }) => {
     }
   };
 
-  const getDetailUser = async (editId) => {
-    const res = await axios.get(`http://localhost:3001/users/${editId}`);
-    setFirstName(res.data.first_name);
-    setLastName(res.data.last_name);
-    setAvatar(res.data.avatar);
-    setEmail(res.data.email);
-  };
-
   useEffect(() => {
     if (editId) {
-      getDetailUser(editId);
+      dispatch(getDetailUser(editId));
     }
   }, [editId]);
 
+  useEffect(() => {
+    if (userDetail) {
+      setFirstName(userDetail.first_name);
+      setLastName(userDetail.last_name);
+      setAvatar(userDetail.avatar);
+      setEmail(userDetail.email);
+    }
+  }, [userDetail]);
+
+  if (userDetailStatus === 'loading') {
+    return <div>Loading...</div>;
+  }
   return (
     <Container>
       <Form onSubmit={handleSubmit}>

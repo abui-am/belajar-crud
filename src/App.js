@@ -6,26 +6,27 @@ import CardUser from './components/CardUser';
 import { Col, Row } from 'react-bootstrap';
 import CustomModal from './components/Modal';
 import FormCreateUser from './components/form/FormCreateUser';
-import { deleteUser, getUsers } from './api/user';
+import 'react-loading-skeleton/dist/skeleton.css';
+
+import {
+  deleteUsers,
+  getUsers,
+  selectUsers,
+  selectUsersStatus,
+} from './redux/feature/usersSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import Skeleton from 'react-loading-skeleton/dist';
 
 function App() {
-  const [data, setData] = useState([]);
-
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [editId, setEditId] = useState();
-
-  const getData = async () => {
-    //
-    const res = await getUsers();
-    setData(res.data);
-  };
+  const users = useSelector(selectUsers);
+  const usersStatus = useSelector(selectUsersStatus);
+  const dispatch = useDispatch();
 
   const handleDelete = async (id) => {
     try {
-      const res = await deleteUser(id);
-      if (res.data.deleted) {
-        getData();
-      }
+      dispatch(deleteUsers(id));
     } catch (e) {
       console.error(e);
     }
@@ -42,7 +43,7 @@ function App() {
 
   const handleSuccess = () => {
     handleClose();
-    getData();
+    // getData();
   };
 
   const handleEdit = (id) => {
@@ -51,7 +52,8 @@ function App() {
   };
 
   useEffect(() => {
-    getData();
+    dispatch(getUsers());
+    // getData();
   }, []);
 
   return (
@@ -66,23 +68,33 @@ function App() {
       </CustomModal>
       <Button onClick={handleOpen}>Create</Button>
       <Row>
-        {data.map((value) => {
-          return (
-            <Col sm={4} key={value.id}>
-              <div className='ms-4 me-4'>
-                <CardUser
-                  id={value.id}
-                  avatar={value.avatar}
-                  email={value.email}
-                  firstName={value.first_name}
-                  lastName={value.last_name}
-                  onDelete={handleDelete}
-                  onEdit={handleEdit}
-                />
-              </div>
-            </Col>
-          );
-        })}
+        {usersStatus === 'loading'
+          ? [1, 2, 3, 4, 5, 6].map((value) => (
+              <Col sm={4} key={value}>
+                <div className='ms-4 me-4 mb-4'>
+                  <Skeleton height={280} className='mb-4' />
+
+                  <Skeleton count={3} />
+                </div>
+              </Col>
+            ))
+          : users.map((value) => {
+              return (
+                <Col sm={4} key={value.id}>
+                  <div className='ms-4 me-4 mb-4'>
+                    <CardUser
+                      id={value.id}
+                      avatar={value.avatar}
+                      email={value.email}
+                      firstName={value.first_name}
+                      lastName={value.last_name}
+                      onDelete={handleDelete}
+                      onEdit={handleEdit}
+                    />
+                  </div>
+                </Col>
+              );
+            })}
       </Row>
     </div>
   );
